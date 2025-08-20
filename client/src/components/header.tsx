@@ -1,12 +1,15 @@
-import { Clock, FileText, ShieldCheck, User } from 'lucide-react';
+import { Clock, FileText, ShieldCheck, User, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface HeaderProps {
   totalEffort: number;
   onGenerateSOW: () => void;
+  onCreateNew: () => void;
+  hasConfiguredServices: boolean;
 }
 
-export function Header({ totalEffort, onGenerateSOW }: HeaderProps) {
+export function Header({ totalEffort, onGenerateSOW, onCreateNew, hasConfiguredServices }: HeaderProps) {
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -27,6 +30,37 @@ export function Header({ totalEffort, onGenerateSOW }: HeaderProps) {
               <span data-testid="total-effort">{totalEffort} hours</span>
               <span>estimated</span>
             </div>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline"
+                  disabled={!hasConfiguredServices}
+                  data-testid="button-create-new"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Start New Configuration?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will clear your current configuration and start fresh. 
+                    Make sure to save your current package if you want to keep it.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={onCreateNew}
+                    data-testid="button-confirm-create-new"
+                  >
+                    Start New
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             
             <Button 
               onClick={onGenerateSOW}

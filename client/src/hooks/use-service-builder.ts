@@ -154,6 +154,14 @@ export function useServiceBuilder() {
     });
   }, [toast]);
 
+  const clearConfiguration = useCallback(() => {
+    setConfiguredServices([]);
+    toast({
+      title: "Configuration cleared",
+      description: "Started a new configuration. All services have been removed."
+    });
+  }, [toast]);
+
   return {
     // State
     configuredServices,
@@ -170,6 +178,7 @@ export function useServiceBuilder() {
     loadPackage,
     updateClientInfo,
     updateOrganizationSettings,
+    clearConfiguration,
 
     // Computed values
     filteredServices: getFilteredServices(),

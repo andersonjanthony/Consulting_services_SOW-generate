@@ -23,6 +23,7 @@ export default function Home() {
     loadPackage,
     updateClientInfo,
     updateOrganizationSettings,
+    clearConfiguration,
     filteredServices,
     totalEffort
   } = useServiceBuilder();
@@ -35,7 +36,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header totalEffort={totalEffort} onGenerateSOW={handleGenerateSOW} />
+      <Header 
+        totalEffort={totalEffort} 
+        onGenerateSOW={handleGenerateSOW} 
+        onCreateNew={clearConfiguration}
+        hasConfiguredServices={configuredServices.length > 0}
+      />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6">

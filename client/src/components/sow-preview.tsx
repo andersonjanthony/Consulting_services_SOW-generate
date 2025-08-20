@@ -1,10 +1,13 @@
-import { useState } from 'react';
-import { Copy, Download, FileText } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Copy, Download, FileText, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfiguredService, ClientInfo, OrganizationSettings } from '@/types';
-import { services, tools, complianceFrameworks, serviceTiers } from '@/lib/services-data';
+import { services, tools, complianceFrameworks } from '@/lib/services-data';
 import { useToast } from '@/hooks/use-toast';
+import { ProfessionalSOWTemplate } from './professional-sow-template';
+import html2pdf from 'html2pdf.js';
 
 interface SOWPreviewProps {
   configuredServices: ConfiguredService[];
@@ -20,6 +23,8 @@ export function SOWPreview({
   totalEffort 
 }: SOWPreviewProps) {
   const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const generateSOWContent = () => {
     const today = new Date().toLocaleDateString();
@@ -159,6 +164,53 @@ ${configuredService.customNotes ? `**Additional Notes:** ${configuredService.cus
     });
   };
 
+  const handleExportPDF = async () => {
+    if (!pdfRef.current) return;
+    
+    setIsExporting(true);
+    toast({
+      title: "Generating PDF",
+      description: "Please wait while we create your professional SOW PDF..."
+    });
+
+    try {
+      const opt = {
+        margin: [0.5, 0.5, 0.5, 0.5],
+        filename: `SOW-${clientInfo.name || 'Client'}-${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true,
+          letterRendering: true,
+          allowTaint: true
+        },
+        jsPDF: { 
+          unit: 'in', 
+          format: 'letter', 
+          orientation: 'portrait',
+          compressPDF: true
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      await html2pdf().set(opt).from(pdfRef.current).save();
+      
+      toast({
+        title: "PDF exported successfully",
+        description: "Your professional SOW has been downloaded as a PDF."
+      });
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast({
+        title: "Export failed",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (configuredServices.length === 0) {
     return (
       <Card>
@@ -188,7 +240,7 @@ ${configuredService.customNotes ? `**Additional Notes:** ${configuredService.cus
               data-testid="button-copy-sow"
             >
               <Copy className="w-4 h-4 mr-2" />
-              Copy
+              Copy Text
             </Button>
             <Button 
               variant="outline" 
@@ -201,24 +253,57 @@ ${configuredService.customNotes ? `**Additional Notes:** ${configuredService.cus
             </Button>
             <Button 
               size="sm" 
-              onClick={handleExportJSON}
+              onClick={handleExportPDF}
+              disabled={isExporting}
               className="bg-primary text-white hover:bg-primary/90"
+              data-testid="button-export-pdf"
+            >
+              <FileDown className="w-4 h-4 mr-2" />
+              {isExporting ? 'Generating...' : 'Export PDF'}
+            </Button>
+            <Button 
+              variant="outline"
+              size="sm" 
+              onClick={handleExportJSON}
               data-testid="button-export-json"
             >
               <FileText className="w-4 h-4 mr-2" />
-              Export JSON
+              JSON
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-          <div className="prose max-w-none text-sm">
-            <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-gray-800 bg-white p-4 rounded border overflow-auto max-h-[600px]">
-              {generateSOWContent()}
-            </pre>
-          </div>
-        </div>
+        <Tabs defaultValue="preview" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="preview">Professional Preview</TabsTrigger>
+            <TabsTrigger value="markdown">Markdown View</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="preview" className="mt-6">
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="max-h-[800px] overflow-y-auto">
+                <ProfessionalSOWTemplate
+                  ref={pdfRef}
+                  configuredServices={configuredServices}
+                  clientInfo={clientInfo}
+                  organizationSettings={organizationSettings}
+                  totalEffort={totalEffort}
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="markdown" className="mt-6">
+            <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+              <div className="prose max-w-none text-sm">
+                <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-gray-800 bg-white p-4 rounded border overflow-auto max-h-[600px]">
+                  {generateSOWContent()}
+                </pre>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
